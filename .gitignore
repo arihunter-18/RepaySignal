@@ -216,3 +216,13 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# RepaySignal Custom Additions
+DATASET_README.md
+.env.example
+RepaySignal_MVP_Build_Plan.md
+
+# Local ML & Data Artifacts
+repaysignal.db
+models_cache/
+synthetic_*.csv
