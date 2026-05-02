@@ -1,17 +1,14 @@
-import os
-import sys
-
-# Ensure backend module is discoverable
-sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
+import sys, os
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from backend.database import engine, Base
-from backend.models.schema import Institute, Student, Outcome, DemandIndex, ModelRegistry
+from backend.models.student import Institute, Student
+from backend.models.risk import RiskScore, AlertState, ModelRegistry
 
 def setup():
-    print("Creating all tables in the database...")
-    Base.metadata.drop_all(bind=engine)
+    print("Creating all tables...")
     Base.metadata.create_all(bind=engine)
-    print("Database setup complete. All tables created.")
+    print("Done.")
 
 if __name__ == "__main__":
     setup()
