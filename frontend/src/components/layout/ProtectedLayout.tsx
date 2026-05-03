@@ -13,7 +13,7 @@ export function ProtectedLayout({ allowedRole }: Props) {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-[#0F0F13] flex items-center justify-center">
-        <LoadingSpinner label="Checking session..." />
+        <LoadingSpinner label="Loading..." />
       </div>
     );
   }
