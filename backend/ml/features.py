@@ -205,10 +205,7 @@ def build_training_dataframe(db: Session) -> pd.DataFrame:
     df['mom_demand_delta'] = (df['mom_delta'] / 100.0).fillna(0.0)
 
     # Target definitions
-    df['risk_label'] = (
-        (~df['event_observed'].fillna(False).astype(bool)) |
-        (df['months_to_event'] > 6)
-    ).astype(int)
+    df['risk_label'] = (~df['event_observed'].fillna(False).astype(bool)).astype(int)
     df['salary_lpa'] = df['actual_salary'] / 100000.0
 
     df['data_trust_weight'] = df['data_trust_score'].fillna(0.5)

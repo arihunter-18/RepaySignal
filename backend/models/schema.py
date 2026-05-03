@@ -14,6 +14,7 @@ class Institute(Base):
 class Student(Base):
     __tablename__ = "students"
     student_id = Column(String(36), primary_key=True)
+    name = Column(String(255), nullable=True)
     institute_id = Column(String(36))
     course_type = Column(String(50))
     course_family = Column(String(20))
@@ -27,8 +28,10 @@ class Student(Base):
     target_field = Column(String(100))
     target_city_tier = Column(Integer)
     loan_emi_monthly = Column(Float)
-    has_profile_contradiction = Column(Boolean)
-    is_scarred = Column(Boolean)
+    data_trust_score = Column(Float, default=0.5)
+    has_profile_contradiction = Column(Boolean, default=False)
+    is_scarred = Column(Boolean, default=False)
+    is_demo = Column(Boolean, default=False)
     tenth_board_score = Column("10th_board_score", Float, nullable=True)
     twelfth_board_score = Column("12th_board_score", Float, nullable=True)
     months_since_graduation = Column(Integer, default=0)
@@ -94,6 +97,7 @@ class RiskScore(Base):
     regulatory_note = Column(String(500), nullable=True)
     needs_human_review = Column(Boolean, default=False)
     scored_at = Column(DateTime, default=datetime.datetime.utcnow)
+    xai_card_text = Column(Text, nullable=True)
 
 
 class AlertState(Base):

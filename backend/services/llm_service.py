@@ -126,13 +126,12 @@ def generate_risk_card(student: Student, risk_data: dict, institute_name: str = 
             from google import genai
             client = genai.Client(api_key=gemini_key)
             
+            prompt_str = f"You are an expert AI Credit Risk Assessor.\n\n{prompt}"
             # Use gemini-2.5-flash for fast, high-quality reasoning
+            # Add timeout/retry logic internally or just rely on SDK
             response = client.models.generate_content(
                 model='gemini-2.5-flash',
-                contents=[
-                    "You are an expert AI Credit Risk Assessor.",
-                    prompt
-                ],
+                contents=prompt_str,
             )
             if response.text:
                 return response.text
@@ -152,16 +151,16 @@ def generate_risk_card(student: Student, risk_data: dict, institute_name: str = 
     # Determine profile archetype
     if student.course_family == "regulatory":
         archetype = "Regulatory"
-        summary = f"This profile exhibits a structurally delayed placement timeline typical of {student.course_type} regulatory requirements. The risk is temporal rather than fundamental."
+        summary = f"{student.name} presents a structurally delayed placement timeline typical of {student.course_type} regulatory requirements. The risk is temporal rather than fundamental."
     elif risk_score > 0.6:
         archetype = "High Risk"
-        summary = f"This profile presents elevated repayment risk (Score: {risk_score:.3f}), primarily driven by limited market traction and high projected EMI stress ({stress_label})."
+        summary = f"{student.name} presents elevated repayment risk (Score: {risk_score:.3f}), primarily driven by limited market traction and high projected EMI stress ({stress_label})."
     elif risk_score < 0.4:
         archetype = "Low Risk"
-        summary = f"This is a highly resilient profile indicating strong market alignment. The candidate demonstrates robust employability signals, projecting minimal repayment friction."
+        summary = f"{student.name} is a highly resilient profile indicating strong market alignment. The candidate demonstrates robust employability signals, projecting minimal repayment friction."
     else:
         archetype = "Moderate Risk"
-        summary = f"This profile presents moderate, manageable risk. While foundational metrics are stable, specific market or experience gaps introduce placement uncertainty."
+        summary = f"{student.name} presents moderate, manageable risk. While foundational metrics are stable, specific market or experience gaps introduce placement uncertainty."
 
     # Build Deductive Reasoning
     reasoning_steps = []
@@ -178,9 +177,10 @@ def generate_risk_card(student: Student, risk_data: dict, institute_name: str = 
     # Build XAI
     xai_str = "The LearnedEnsemble model highlights the following causal pathways:\n\n"
     if shap_drivers:
-        for d in shap_drivers[:3]:
+        for i, d in enumerate(shap_drivers[:3]):
             impact = "amplifies" if d["direction"] == "increases_risk" else "mitigates"
-            xai_str += f"- **{d['feature']}** {impact} risk significantly (Magnitude: {d['magnitude']:.3f}). {d['display']}.\n"
+            feature_display = d['feature'].replace('_', ' ').title()
+            xai_str += f"- **{feature_display}** {impact} risk significantly (Magnitude: {d['magnitude']:.3f}), as the model identifies this as the #{i+1} driver.\n"
     else:
         xai_str += "- No dominant distinct drivers isolated; risk is distributed across multiple interacting factors.\n"
 

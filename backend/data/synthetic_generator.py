@@ -225,7 +225,7 @@ def generate_targets(df_students: pd.DataFrame, hidden_factors: List[Dict[str, f
         anomaly_factor = np.random.lognormal(mean=0, sigma=CONFIG["anomaly_sigma"])
         score += np.random.normal(0, 1) * anomaly_factor * CONFIG["anomaly_multiplier"]
             
-        skewed_noise = np.random.normal(0, 0.8) - np.random.exponential(0.6)
+        skewed_noise = np.random.normal(0, 0.8) - np.random.exponential(0.2)
         prob = expit(score + skewed_noise)
         
         event_observed = random.random() < prob

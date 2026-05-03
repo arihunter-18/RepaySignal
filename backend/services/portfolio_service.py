@@ -1,9 +1,18 @@
+import os
+import joblib
+import pandas as pd
 from sqlalchemy.orm import Session
-from backend.models.student import Student, Institute
-from backend.models.risk import RiskScore, AlertState, ModelRegistry
-from backend.services.ml_client import build_student_features, predict_stress_test
+from backend.models.schema import Student, Institute, DemandIndex
+from backend.models.schema import RiskScore, AlertState, ModelRegistry
+from backend.ml.features import build_feature_vector
 from backend.services.risk_service import get_risk_tier
+from backend.data.demand_index_mock import get_latest_demand
 
+CACHE_DIR = "models_cache"
+try:
+    xgb_risk = joblib.load(os.path.join(CACHE_DIR, "xgb_risk.pkl"))
+except Exception:
+    xgb_risk = None
 
 def get_portfolio_summary(db: Session) -> dict:
     students = db.query(Student).all()
@@ -12,7 +21,6 @@ def get_portfolio_summary(db: Session) -> dict:
         str(rs.student_id): float(rs.risk_score or 0)
         for rs in db.query(RiskScore).all()
     }
-    institutes_map = {str(i.id): i for i in db.query(Institute).all()}
 
     high, medium, low = 0, 0, 0
     field_data: dict = {}
@@ -85,16 +93,11 @@ def get_portfolio_summary(db: Session) -> dict:
 
 
 async def run_stress_test(field: str, shock_pct: float, db: Session) -> dict:
-    """Collect all students in the target field and forward to Flask."""
+    """Collect all students in target field, apply demand shock, and re-predict natively."""
     students = db.query(Student).filter(Student.target_field == field).all()
-    institutes_map = {str(i.id): i for i in db.query(Institute).all()}
-
-    portfolio_features = [
-        build_student_features(s, institutes_map.get(str(s.institute_id)))
-        for s in students
-    ]
-
-    if not portfolio_features:
+    institutes_map = {str(i.institute_id): i for i in db.query(Institute).all()}
+    
+    if not students or not xgb_risk:
         return {
             "shock_applied": f"{field} demand drops {shock_pct:.0f}%",
             "baseline_high_risk": 0,
@@ -104,6 +107,52 @@ async def run_stress_test(field: str, shock_pct: float, db: Session) -> dict:
             "most_affected_fields": [field],
         }
 
-    result = await predict_stress_test(field, shock_pct, portfolio_features)
-    result["shock_applied"] = f"{field} demand drops {shock_pct:.0f}%"
-    return result
+    baseline_high = 0
+    shocked_high = 0
+
+    for s in students:
+        inst = institutes_map.get(str(s.institute_id))
+        
+        # Get actual cohort 
+        cohort = db.query(Student.cgpa).filter(
+            Student.institute_id == s.institute_id,
+            Student.course_type == s.course_type,
+            Student.graduation_year == s.graduation_year
+        ).all()
+        cohort_df = pd.DataFrame(cohort, columns=['cgpa']) if cohort else pd.DataFrame()
+        
+        # Get demand
+        demand_record = get_latest_demand(s.target_field, s.target_city_tier, db)
+        if not demand_record: continue
+        
+        from backend.ml.gbm_model import _prepare_features
+        # Build baseline features
+        f_base = build_feature_vector(s, inst, demand_record, cohort_df, db)
+        X_base_df = pd.DataFrame([f_base])
+        X_base = _prepare_features(X_base_df).values
+        base_score = float(xgb_risk.predict_proba(X_base)[0][1])
+        if base_score >= 0.70:
+            baseline_high += 1
+            
+        # Apply shock
+        demand_record.demand_percentile = max(0, demand_record.demand_percentile * (1 - (shock_pct/100.0)))
+        demand_record.mom_delta = demand_record.mom_delta - shock_pct
+        
+        f_shock = build_feature_vector(s, inst, demand_record, cohort_df, db)
+        X_shock_df = pd.DataFrame([f_shock])
+        X_shock = _prepare_features(X_shock_df).values
+        shock_score = float(xgb_risk.predict_proba(X_shock)[0][1])
+        if shock_score >= 0.70:
+            shocked_high += 1
+
+    new_at_risk = max(0, shocked_high - baseline_high)
+    impact_pct = round((new_at_risk / len(students)) * 100, 2) if students else 0.0
+
+    return {
+        "shock_applied": f"{field} demand drops {shock_pct:.0f}%",
+        "baseline_high_risk": baseline_high,
+        "shocked_high_risk": shocked_high,
+        "new_at_risk": new_at_risk,
+        "portfolio_impact_pct": impact_pct,
+        "most_affected_fields": [field],
+    }

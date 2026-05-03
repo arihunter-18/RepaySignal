@@ -218,9 +218,11 @@ __marimo__/
 .streamlit/secrets.toml
 
 # RepaySignal Custom Additions
-DATASET_README.md
+dataset_readme.md
 .env.example
-RepaySignal_MVP_Build_Plan.md
+repaysignal_mvp_build_plan.md
+pipeline_output.txt
+xai_analysis_report.md
 
 # Local ML & Data Artifacts
 repaysignal.db

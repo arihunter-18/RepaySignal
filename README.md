@@ -71,7 +71,18 @@ On success, you will see `Cached artifacts (9)` successfully saved to the `/mode
 
 ---
 
-## 🗺️ Next Steps
-- **Phase 4:** Develop FastAPI Endpoints (`backend/routers/`) to serve predictions, aggregated portfolio views, and alert states.
-- **Phase 5:** Build React 18 + TypeScript frontend dashboard.
-- **Phase 6:** Integrate the LLM Risk Card layer (Claude/OpenAI) using the SHAP explanation outputs.
+## 🧪 Demo Data & Native Backend Testing
+
+The MVP uses a monolithic FastAPI application containing native XGBoost and MAPIE inferences. The React frontend is omitted in favor of automated API testing.
+
+### 1. Prime the Database for Demo
+Seed exactly 20 demo students (e.g. Ananya Krishnan) configured with specific triggers and risk profiles:
+```bash
+python scripts/run_demo_seed.py
+```
+
+### 2. Run End-to-End Native Backend Tests
+Execute the comprehensive test suite to validate the Risk Service, LLM Explainability, Triggers, and Portfolio Stress Testing entirely through FastAPI without needing the server running concurrently:
+```bash
+python scripts/test_backend.py
+```

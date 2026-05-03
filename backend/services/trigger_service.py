@@ -1,8 +1,8 @@
 import uuid
 from datetime import date, timedelta
 from sqlalchemy.orm import Session
-from backend.models.risk import AlertState
-from backend.models.student import Student
+from backend.models.schema import AlertState
+from backend.models.schema import Student
 
 TRIGGERS = [
     {

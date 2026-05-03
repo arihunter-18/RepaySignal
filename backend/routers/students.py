@@ -2,8 +2,8 @@ from fastapi import APIRouter, Depends, Query, HTTPException
 from sqlalchemy.orm import Session
 from typing import Optional
 from backend.database import get_db
-from backend.models.student import Student, Institute
-from backend.models.risk import RiskScore
+from backend.models.schema import Student, Institute
+from backend.models.schema import RiskScore
 from backend.services.risk_service import get_risk_tier
 
 router = APIRouter()
@@ -25,7 +25,7 @@ async def list_students(
         str(rs.student_id): float(rs.risk_score or 0)
         for rs in db.query(RiskScore).all()
     }
-    institutes_map = {str(i.id): i for i in db.query(Institute).all()}
+    institutes_map = {str(i.institute_id): i for i in db.query(Institute).all()}
 
     result = []
     for s in students:
@@ -54,7 +54,7 @@ async def get_student(student_id: str, db: Session = Depends(get_db)):
     student = db.query(Student).filter(Student.student_id == student_id).first()
     if not student:
         raise HTTPException(status_code=404, detail="Student not found")
-    institute = db.query(Institute).filter(Institute.id == student.institute_id).first()
+    institute = db.query(Institute).filter(Institute.institute_id == student.institute_id).first()
     return {
         "student_id": str(student.student_id),
         "name": student.name,
