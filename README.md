@@ -134,12 +134,14 @@ frontend/
 - **NPM 9+**
 - **RepaySignal Backend** running at `http://localhost:8000`
 
-### 2. Install Dependencies
+### Install Dependencies
 Due to React 19's strict peer-dependency checks and some library version gaps, use the `--legacy-peer-deps` flag:
 
 ```bash
 npm install --legacy-peer-deps
-> **Database**: SQLite is used by default — no database server installation is required. The database file (`repaysignal.db`) is auto-created by the setup script.
+```
+> **Database**: SQLite is used by default — no database server installation is required.  
+> The database file (`repaysignal.db`) is auto-created by the setup script.
 
 ---
 
@@ -148,7 +150,7 @@ npm install --legacy-peer-deps
 ### 1. Clone the repository
 
 ```bash
-git clone (https://github.com/arihunter-18/RepaySignal)
+git clone https://github.com/arihunter-18/RepaySignal
 cd repaysignal
 ```
 
