@@ -106,9 +106,22 @@ repaysignal/
 │   ├── run_demo_seed.py             # Seeds 20 demo students with pre-fired alerts
 │   ├── generate_xai_report.py       # Generates full XAI markdown report
 │   └── test_backend.py              # End-to-end integration tests
-├── frontend/                        # React frontend (Phase 5)
-├── requirements.txt
-└── .env.example
+frontend/
+├── src/
+│   ├── components/
+│   │   ├── layout/          # PageHeader, Sidebar, Navigation
+│   │   ├── portfolio/       # KPIRibbon, IndiaMap, SectorTable, StressTest
+│   │   ├── student/         # RiskGauge, PlacementTimeline, ShapDrivers, WhatIfSimulator
+│   │   └── shared/          # Card, Spinner, RiskBadge, Tooltip
+│   ├── hooks/               # useRisk, useStudents, usePortfolio (TanStack Query)
+│   ├── context/             # SessionContext, AppContext (Theme)
+│   ├── pages/               # AdminDashboard, StudentDetailPage, AlertView
+│   ├── services/            # API client (Axios-based fetchers)
+│   ├── types/               # TypeScript interfaces (Student, Risk, Alert)
+│   └── utils/               # Formatting, coordinate mapping, risk logic
+├── public/                  # Assets and fallback maps
+├── tailwind.config.js       # Custom theme extensions (Slate-base)
+└── package.json
 ```
 
 ---
@@ -116,9 +129,16 @@ repaysignal/
 ## Prerequisites
 
 - **Python 3.11+**
-- **Node.js 18+** (for frontend only)
 - A POSIX shell or PowerShell (Windows fully supported)
+- **Node.js 18+**
+- **NPM 9+**
+- **RepaySignal Backend** running at `http://localhost:8000`
 
+### 2. Install Dependencies
+Due to React 19's strict peer-dependency checks and some library version gaps, use the `--legacy-peer-deps` flag:
+
+```bash
+npm install --legacy-peer-deps
 > **Database**: SQLite is used by default — no database server installation is required. The database file (`repaysignal.db`) is auto-created by the setup script.
 
 ---
@@ -150,7 +170,7 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### 4. Configure environment variables
+### 4 a. Configure environment variables
 
 ```bash
 cp .env.example .env
@@ -160,12 +180,19 @@ Open `.env` and set at minimum:
 
 ```
 DATABASE_URL=sqlite:///./repaysignal.db
+
 # Optional: GEMINI_API_KEY=<your_key>   # Enables real Gemini 2.5 Flash XAI cards
 ```
 
 > Without a `GEMINI_API_KEY`, the system uses a high-fidelity deterministic XAI fallback that produces structured, SHAP-grounded risk narratives automatically.
 
 ---
+
+### 4 b. Environment variables for frontend 
+```
+VITE_API_URL=http://localhost:8000
+VITE_ENABLE_XAI=true
+```
 
 ## Running the Application
 
