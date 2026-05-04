@@ -1,46 +1,45 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAlerts, useMarkActioned } from '../hooks/useAlerts';
-import { Topbar } from '../components/layout/Topbar';
-import { LoadingSpinner } from '../components/shared/LoadingSpinner';
+import { useAlerts, usePatchAlert } from '../hooks';
+import { PageHeader } from '../components/layout/PageHeader';
+import { Card } from '../components/shared/Card';
+import { Spinner } from '../components/shared/Spinner';
 
-const STATES = ['triggered', 'actioned'];
+const STATES = ['triggered', 'actioned', 'resolved'];
 
 export function AlertsPage() {
-  const [stateFilter, setStateFilter] = useState('triggered');
-  const [actionTexts, setActionTexts] = useState<Record<string, string>>({});
   const navigate = useNavigate();
+  const [stateFilter, setStateFilter] = useState('triggered');
+  const [notes, setNotes] = useState<Record<string, string>>({});
   const { data: alertsList, isLoading } = useAlerts(stateFilter);
-  const markActioned = useMarkActioned();
+  const patch = usePatchAlert();
 
   return (
-    <div className="flex-1 overflow-y-auto bg-slate-50"> {/* Added slate-50 page background */}
-      <Topbar title="Alert case list" subtitle="All triggered interventions" />
-      
-      <div className="p-6 max-w-6xl">
-        {/* State Filter Buttons */}
-        <div className="flex gap-2 mb-6">
+    <div className="flex-1 overflow-y-auto scrollbar-thin">
+      <PageHeader title="Alert Case List" subtitle="All triggered interventions requiring action" />
+      <div className="p-6 max-w-screen-xl">
+
+        {/* State filter */}
+        <div className="flex gap-2 mb-5">
           {STATES.map(s => (
             <button key={s} onClick={() => setStateFilter(s)}
-              className={`text-xs px-5 py-2 rounded-full border transition-all font-body font-semibold shadow-sm ${
+              className={`px-4 py-2 text-sm rounded-lg border transition-all font-medium ${
                 stateFilter === s
-                  ? 'bg-purple-600 text-white border-purple-600'
-                  : 'bg-white text-slate-500 border-slate-200 hover:border-slate-300 hover:bg-slate-50'
+                  ? 'bg-blue-600 text-white border-blue-600'
+                  : 'bg-white text-slate-600 border-slate-200 hover:border-blue-300'
               }`}>
               {s.charAt(0).toUpperCase() + s.slice(1)}
             </button>
           ))}
         </div>
 
-        {isLoading ? <LoadingSpinner label="Retrieving alerts..." /> : (
-          /* Table Container: Solid white with subtle shadow */
-          <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
+        {isLoading ? <Spinner label="Loading alerts..." /> : (
+          <Card padding="none">
             <table className="w-full text-sm">
               <thead>
-                /* Table Header: Swapped text-white/25 for text-slate-400 */
-                <tr className="bg-slate-50/50 border-b border-slate-200">
+                <tr className="bg-slate-50 border-b border-slate-200">
                   {['Student', 'Course', 'Trigger', 'Severity', 'Assignee', 'Deadline', 'Action'].map(h => (
-                    <th key={h} className="px-4 py-4 text-left text-[10px] text-slate-400 font-bold font-body uppercase tracking-widest">
+                    <th key={h} className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                       {h}
                     </th>
                   ))}
@@ -49,53 +48,51 @@ export function AlertsPage() {
               <tbody className="divide-y divide-slate-100">
                 {!alertsList?.length && (
                   <tr>
-                    <td colSpan={7} className="px-4 py-16 text-center text-slate-400 text-sm font-body">
-                      No active alerts found for this state.
+                    <td colSpan={7} className="px-5 py-10 text-center text-slate-400">
+                      No alerts in state: {stateFilter}
                     </td>
                   </tr>
                 )}
                 {alertsList?.map((alert: any) => (
-                  <tr key={alert.id} className="hover:bg-slate-50/80 transition-colors">
-                    <td className="px-4 py-4">
+                  <tr key={alert.id} className="hover:bg-slate-50 transition-colors">
+                    <td className="px-5 py-3">
                       <button onClick={() => navigate(`/student/${alert.student_id}`)}
-                        className="text-purple-600 hover:text-purple-800 font-body text-sm font-bold">
+                        className="font-medium text-blue-600 hover:text-blue-700 hover:underline">
                         {alert.student_name}
                       </button>
                     </td>
-                    <td className="px-4 py-4 text-slate-500 font-body text-xs">{alert.student_course}</td>
-                    <td className="px-4 py-4 text-slate-700 font-body text-xs font-medium">{alert.trigger_name}</td>
-                    <td className="px-4 py-4">
-                      /* Severity Badges: Using soft backgrounds and dark text */
-                      <span className={`text-[10px] px-2 py-0.5 rounded-full border font-bold uppercase tracking-wide font-body ${
-                        alert.severity === 'high'
-                          ? 'text-red-700 bg-red-50 border-red-100'
-                          : 'text-amber-700 bg-amber-50 border-amber-100'
+                    <td className="px-5 py-3 text-slate-500 text-xs">{alert.student_course}</td>
+                    <td className="px-5 py-3 text-slate-700">{alert.trigger_name}</td>
+                    <td className="px-5 py-3">
+                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium border ${
+                        alert.severity === 'high' ? 'bg-red-50 text-red-700 border-red-200' :
+                        'bg-amber-50 text-amber-700 border-amber-200'
                       }`}>{alert.severity}</span>
                     </td>
-                    <td className="px-4 py-4 text-slate-500 font-body text-xs">{alert.assignee}</td>
-                    <td className="px-4 py-4 text-slate-500 font-body text-xs">{alert.deadline || '—'}</td>
-                    <td className="px-4 py-4">
+                    <td className="px-5 py-3 text-slate-500 text-xs">{alert.assignee}</td>
+                    <td className="px-5 py-3 text-slate-500 text-xs">{alert.deadline || '—'}</td>
+                    <td className="px-5 py-3">
                       {stateFilter === 'triggered' ? (
                         <div className="flex gap-2">
                           <input type="text" placeholder="Add note..."
-                            value={actionTexts[alert.id] || ''}
-                            onChange={e => setActionTexts(p => ({ ...p, [alert.id]: e.target.value }))}
-                            className="text-xs bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 w-32 text-slate-900 placeholder-slate-400 outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-100 transition-all font-body" />
+                            value={notes[alert.id] || ''}
+                            onChange={e => setNotes(p => ({ ...p, [alert.id]: e.target.value }))}
+                            className="text-xs border border-slate-200 rounded-lg px-2 py-1.5 w-32 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" />
                           <button
-                            onClick={() => markActioned.mutate({ alertId: alert.id, action_taken: actionTexts[alert.id] || '' })}
-                            className="text-xs bg-purple-600 hover:bg-purple-700 text-white px-4 py-1.5 rounded-lg transition-all font-bold shadow-sm shadow-purple-200">
+                            onClick={() => patch.mutate({ id: alert.id, action: notes[alert.id] || 'Reviewed' })}
+                            className="text-xs bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg transition-colors">
                             Done
                           </button>
                         </div>
                       ) : (
-                        <span className="text-xs text-slate-400 italic font-body">{alert.action_taken || '—'}</span>
+                        <span className="text-xs text-slate-400">{alert.action_taken || '—'}</span>
                       )}
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
-          </div>
+          </Card>
         )}
       </div>
     </div>

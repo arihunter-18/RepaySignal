@@ -209,6 +209,13 @@ tempCodeRunnerFile.py
 # PyPI configuration file
 .pypirc
 
+
+*.md
+
+# But DO NOT ignore README.md
+!README.md
+
+
 # Marimo
 marimo/_static/
 marimo/_lsp/
